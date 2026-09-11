@@ -39,8 +39,8 @@ pub fn default_css_vars() -> String {
     vars.push_str("--glitch-jitter:1.2px;");
     vars.push_str("--scanline-opacity:0.30;");
     vars.push_str("--scanline-color:#000;");
-    vars.push_str("--scanline-size:calc(100vh / 216);");
-    vars.push_str("--scanline-gap:calc(100vh / 216);");
+    vars.push_str("--scanline-size:0.1rem;");
+    vars.push_str("--scanline-gap:calc((100vh / 216) - 0.1rem);");
     vars.push_str("--scanline-speed:90s;");
     vars.push_str("--scanline-steps:2160;");
     vars.push_str("--crt-perspective:600px;");
@@ -142,7 +142,7 @@ body::after {{
   background: repeating-linear-gradient(
     to bottom,
     var(--scanline-color) 0px,
-    var(--scanline-color) var(--scanline-size),
+    var(--scanline-color) calc(var(--scanline-size) * 0.6),
     transparent var(--scanline-size),
     transparent calc(var(--scanline-size) + var(--scanline-gap))
   );

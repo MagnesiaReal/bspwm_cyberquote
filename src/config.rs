@@ -32,6 +32,8 @@
 //!   │   glitch_interval: 6.5                      # seconds between glitch │
 //!   │   scanline_opacity: 0.15                    # 0.0-1.0               │
 //!   │   scanline_steps: 2160                       # ≈24 steps/s (fluid)  │
+//!   │   scanline_lines: 216                        # line+gap per screen   │
+//!   │   scanline_size_rem: 0.1                     # line thickness in rem │
 //!   │   crt_curvature: 0.12                       # screen bend factor    │
 //!   │                                                                 │
 //!   │ quotes:                                                        │
@@ -45,24 +47,12 @@
 //!   │   primary_only: false                        # bool                  │
 //!   └─────────────────────────────────────────────────────────────────┘
 //!
-//! Stylesheet injection method:
-//!   build_stylesheet() returns a CSS string whose custom properties are scoped
-//!   to `:root`.  main.rs injects it via webkit_web_view_run_javascript() by
-//!   wrapping the CSS in a <style> tag:
-//!
-//!     let js = format!(
-//!         "const s=document.createElement('style');"+
-//!         "s.textContent={:?);"+
-//!         "document.documentElement.appendChild(s);",
-//!         stylesheet
-//!     );
-//!     webkit_web_view_run_javascript(&webview, &js, None, None);
-//!
-//!   This avoids webkit2gtk user-stylesheet API versioning differences across
-//!   GTK4 / webkit2gtk-4.1 and works in every WebView regardless of how the
-//!   HTML was loaded (inline base64, file://, data:).  Agent 2 may instead use
-//!   the native user-stylesheet path if it prefers — the CSS string is identical
-//!   either way.
+//! Stylesheet injection note:
+//!   The original webkit2gtk host injected `build_stylesheet()`'s custom
+//!   properties into the WebView by wrapping them in a <style> tag.  This is
+//!   now handled in main.rs via the webkit2gtk user-content / user-stylesheet
+//!   path; the returned string is a semicolon-separated list of CSS
+//!   custom-property declarations (e.g. `--accent-cyan:#39e6ff;--bg:#05070d;`).
 
 use serde::Deserialize;
 use std::fmt;
@@ -174,6 +164,10 @@ pub struct AccentConfig {
     pub scanline_opacity: f32,
     #[serde(default = "AccentConfig::default_scanline_steps")]
     pub scanline_steps: u32,
+    #[serde(default = "AccentConfig::default_scanline_lines")]
+    pub scanline_lines: u32,
+    #[serde(default = "AccentConfig::default_scanline_size_rem")]
+    pub scanline_size_rem: f32,
     #[serde(default = "AccentConfig::default_crt_curvature")]
     pub crt_curvature: f32,
 }
@@ -189,6 +183,8 @@ impl AccentConfig {
             glitch_interval: Self::default_glitch_interval(),
             scanline_opacity: Self::default_scanline_opacity(),
             scanline_steps: Self::default_scanline_steps(),
+            scanline_lines: Self::default_scanline_lines(),
+            scanline_size_rem: Self::default_scanline_size_rem(),
             crt_curvature: Self::default_crt_curvature(),
         }
     }
@@ -215,6 +211,12 @@ impl AccentConfig {
     }
     fn default_scanline_steps() -> u32 {
         2160
+    }
+    fn default_scanline_lines() -> u32 {
+        216
+    }
+    fn default_scanline_size_rem() -> f32 {
+        0.1
     }
     fn default_crt_curvature() -> f32 {
         0.12
@@ -364,10 +366,13 @@ pub fn build_stylesheet(config: &Config) -> String {
 
     let scanline_opacity = css_alpha(config.accent.scanline_opacity);
     let scanline_color = "#000";
-    let scanline_size = "calc(100vh / 216)";
-    let scanline_gap = "calc(100vh / 216)";
+    let scanline_lines = config.accent.scanline_lines.max(1).min(2000);
+    let scanline_size_rem = config.accent.scanline_size_rem.clamp(0.02, 0.5);
+    let scanline_size = format!("{}rem", scanline_size_rem);
+    let scanline_gap =
+        format!("calc((100vh / {}) - {}rem)", scanline_lines, scanline_size_rem);
     let scanline_speed = "90s";
-    let scanline_steps = config.accent.scanline_steps;
+    let scanline_steps = config.accent.scanline_steps.max(2);
 
     let crt_perspective = "600px";
     let crt_radius = "40px";
@@ -635,6 +640,8 @@ glitch_duration = 0.30
 glitch_interval = 4.0
 scanline_opacity = 0.20
 scanline_steps = 120
+scanline_lines = 360
+scanline_size_rem = 0.07
 crt_curvature = 0.18
 
 [quotes]
@@ -668,6 +675,8 @@ primary_only = true
         assert!((c.accent.glitch_interval - 4.0).abs() < 0.01);
         assert!((c.accent.scanline_opacity - 0.20).abs() < 0.01);
         assert_eq!(c.accent.scanline_steps, 120);
+        assert_eq!(c.accent.scanline_lines, 360);
+        assert!((c.accent.scanline_size_rem - 0.07).abs() < 0.01);
         assert!((c.accent.crt_curvature - 0.18).abs() < 0.01);
 
         assert_eq!(c.quotes.source, "~/quotes.txt");
@@ -694,6 +703,8 @@ primary_only = true
         assert!((c.accent.glitch_interval - AccentConfig::default_glitch_interval()).abs() < 0.01);
         assert!((c.accent.scanline_opacity - AccentConfig::default_scanline_opacity()).abs() < 0.01);
         assert_eq!(c.accent.scanline_steps, AccentConfig::default_scanline_steps());
+        assert_eq!(c.accent.scanline_lines, AccentConfig::default_scanline_lines());
+        assert!((c.accent.scanline_size_rem - AccentConfig::default_scanline_size_rem()).abs() < 0.01);
         assert!((c.accent.crt_curvature - AccentConfig::default_crt_curvature()).abs() < 0.01);
         assert_eq!(c.quotes.source, QuotesConfig::default_source());
         assert_eq!(c.quotes.cycle_interval_minutes, QuotesConfig::default_cycle_interval_minutes());
@@ -728,7 +739,7 @@ primary_only = true
             "--glitch-color-cyan", "--glitch-color-magenta",
             "--glitch-jitter",
             "--scanline-opacity", "--scanline-color", "--scanline-size",
-            "--scanline-gap", "--scanline-speed",
+            "--scanline-gap", "--scanline-speed", "--scanline-steps",
             "--crt-perspective", "--crt-radius",
             "--crt-vignette-stops", "--crt-vignette-blur",
             "--vignette-edge", "--center-padding", "--max-quote-chars",
@@ -757,6 +768,14 @@ primary_only = true
         let c = parsed_config();
         let css = build_stylesheet(&c);
         assert!(css.contains("22px"), "should emit --font-size 22px");
+    }
+
+    #[test]
+    fn build_stylesheet_includes_scanline_mesh_values() {
+        let c = parsed_config();
+        let css = build_stylesheet(&c);
+        assert!(css.contains("--scanline-size:0.07rem"));
+        assert!(css.contains("--scanline-gap:calc((100vh / 360) - 0.07rem)"));
     }
 
     #[test]

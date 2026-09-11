@@ -39,8 +39,8 @@
   --glitch-jitter:1.2px;
   --scanline-opacity:0.30;
   --scanline-color:#000;
-  --scanline-size:calc(100vh / 216);
-  --scanline-gap:calc(100vh / 216);
+  --scanline-size:0.1rem;
+  --scanline-gap:calc((100vh / 216) - 0.1rem);
   --scanline-speed:90s;
   --scanline-steps:2160;
   --crt-perspective:600px;
@@ -101,7 +101,7 @@ body::after {
   background: repeating-linear-gradient(
     to bottom,
     var(--scanline-color) 0px,
-    var(--scanline-color) var(--scanline-size),
+    var(--scanline-color) calc(var(--scanline-size) * 0.6),
     transparent var(--scanline-size),
     transparent calc(var(--scanline-size) + var(--scanline-gap))
   );
