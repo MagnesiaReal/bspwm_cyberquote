@@ -10,6 +10,7 @@
 //! GTK3 avoids the glib version diamond (glib 0.18 from webkit2gtk vs glib 0.20
 //! from gtk4) that would otherwise make `WebView` incompatible as a window child.
 
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use glib::prelude::*;
@@ -25,6 +26,32 @@ use bspwm_cyberquote::config::{ConfigMonitorInfo, Orientation};
 // Config path — per-user file.  Agent 2's config::load_config reads this.
 // ---------------------------------------------------------------------------
 const CONFIG_PATH: &str = concat!(env!("HOME"), "/.config/bspwm-cyberquote/config.toml");
+
+/// Precedence: per-user CONFIG_PATH → repo `./config.toml` → defaults.
+///
+/// git-pull then `cargo run --release` from the repo on a fresh machine has
+/// no per-user config yet; without this fallback it silently used
+/// `Config::defaults()` (font_size 18) instead of the committed 37.
+fn load_cfg() -> Result<bspwm_cyberquote::config::Config, (PathBuf, String)> {
+    let candidates: [PathBuf; 2] = [PathBuf::from(CONFIG_PATH), PathBuf::from("config.toml")];
+    let mut last: Option<(PathBuf, String)> = None;
+    for path in candidates {
+        match bspwm_cyberquote::config::load_config(&path) {
+            Ok(c) => {
+                eprintln!("bspwm-cyberquote: config loaded from {}", path.display());
+                return Ok(c);
+            }
+            Err(e) => last = Some((path, e.to_string())),
+        }
+    }
+    match last {
+        Some((p, s)) => Err((p, s)),
+        None => {
+            let e = "no config candidate could be loaded".to_string();
+            Err((PathBuf::from(CONFIG_PATH), e))
+        }
+    }
+}
 
 
 
@@ -88,16 +115,14 @@ fn build_windows(app: &Application) {
     use gtk::gdk::{Display, Monitor, Rectangle};
 
     // ---- config + stylesheet (Agent 2) ----
-    let cfg = match bspwm_cyberquote::config::load_config(CONFIG_PATH) {
+    let cfg = match load_cfg() {
         Ok(c) => c,
-        Err(e) => {
-            eprintln!(
-                "bspwm-cyberquote: config load failed ({}), using defaults",
-                e
-            );
+        Err((_, e)) => {
+            eprintln!("bspwm-cyberquote: config load failed ({}), using defaults", e);
             bspwm_cyberquote::config::Config::defaults()
         }
     };
+
     let stylesheet = bspwm_cyberquote::config::build_stylesheet(&cfg);
     eprintln!(
         "bspwm-cyberquote: config loaded, stylesheet {} bytes",
