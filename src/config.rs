@@ -31,6 +31,7 @@
 //!   │   glitch_duration: 0.52                     # per-glitch seconds     │
 //!   │   glitch_interval: 6.5                      # seconds between glitch │
 //!   │   scanline_opacity: 0.15                    # 0.0-1.0               │
+//!   │   scanline_steps: 90                         # sweep steps (CPU)     │
 //!   │   crt_curvature: 0.12                       # screen bend factor    │
 //!   │                                                                 │
 //!   │ quotes:                                                        │
@@ -171,6 +172,8 @@ pub struct AccentConfig {
     pub glitch_interval: f32,
     #[serde(default = "AccentConfig::default_scanline_opacity")]
     pub scanline_opacity: f32,
+    #[serde(default = "AccentConfig::default_scanline_steps")]
+    pub scanline_steps: u32,
     #[serde(default = "AccentConfig::default_crt_curvature")]
     pub crt_curvature: f32,
 }
@@ -185,6 +188,7 @@ impl AccentConfig {
             glitch_duration: Self::default_glitch_duration(),
             glitch_interval: Self::default_glitch_interval(),
             scanline_opacity: Self::default_scanline_opacity(),
+            scanline_steps: Self::default_scanline_steps(),
             crt_curvature: Self::default_crt_curvature(),
         }
     }
@@ -208,6 +212,9 @@ impl AccentConfig {
     }
     fn default_scanline_opacity() -> f32 {
         0.30
+    }
+    fn default_scanline_steps() -> u32 {
+        90
     }
     fn default_crt_curvature() -> f32 {
         0.12
@@ -357,9 +364,10 @@ pub fn build_stylesheet(config: &Config) -> String {
 
     let scanline_opacity = css_alpha(config.accent.scanline_opacity);
     let scanline_color = "#000";
-    let scanline_size = "5px";
-    let scanline_gap = "5px";
+    let scanline_size = "calc(100vh / 216)";
+    let scanline_gap = "calc(100vh / 216)";
     let scanline_speed = "90s";
+    let scanline_steps = config.accent.scanline_steps;
 
     let crt_perspective = "600px";
     let crt_radius = "40px";
@@ -375,7 +383,7 @@ pub fn build_stylesheet(config: &Config) -> String {
 
     let cursor_char = "'▍'";
     let cursor_blink = "0.9s";
-    let cursor_color = "var(--accent-cyan)";
+    let cursor_color = "#ffffff";
 
     let glow_cyan_1 = format!("0 0 6px var(--accent-cyan)");
     let glow_cyan_2 = format!("0 0 18px var(--accent-cyan)");
@@ -423,6 +431,7 @@ pub fn build_stylesheet(config: &Config) -> String {
         format!("--scanline-size:{}", scanline_size),
         format!("--scanline-gap:{}", scanline_gap),
         format!("--scanline-speed:{}", scanline_speed),
+        format!("--scanline-steps:{}", scanline_steps),
         format!("--crt-perspective:{}", crt_perspective),
         format!("--crt-radius:{}", crt_radius),
         format!("--crt-vignette-stops:{}", crt_vignette_stops),
@@ -625,6 +634,7 @@ glitch_intensity = 0.45
 glitch_duration = 0.30
 glitch_interval = 4.0
 scanline_opacity = 0.20
+scanline_steps = 120
 crt_curvature = 0.18
 
 [quotes]
@@ -657,6 +667,7 @@ primary_only = true
         assert!((c.accent.glitch_duration - 0.30).abs() < 0.01);
         assert!((c.accent.glitch_interval - 4.0).abs() < 0.01);
         assert!((c.accent.scanline_opacity - 0.20).abs() < 0.01);
+        assert_eq!(c.accent.scanline_steps, 120);
         assert!((c.accent.crt_curvature - 0.18).abs() < 0.01);
 
         assert_eq!(c.quotes.source, "~/quotes.txt");
@@ -682,6 +693,7 @@ primary_only = true
         assert!((c.accent.glitch_duration - AccentConfig::default_glitch_duration()).abs() < 0.01);
         assert!((c.accent.glitch_interval - AccentConfig::default_glitch_interval()).abs() < 0.01);
         assert!((c.accent.scanline_opacity - AccentConfig::default_scanline_opacity()).abs() < 0.01);
+        assert_eq!(c.accent.scanline_steps, AccentConfig::default_scanline_steps());
         assert!((c.accent.crt_curvature - AccentConfig::default_crt_curvature()).abs() < 0.01);
         assert_eq!(c.quotes.source, QuotesConfig::default_source());
         assert_eq!(c.quotes.cycle_interval_minutes, QuotesConfig::default_cycle_interval_minutes());

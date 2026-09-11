@@ -30,7 +30,7 @@ pub fn default_css_vars() -> String {
     vars.push_str("--typewriter-opacity-end:1;");
     vars.push_str("--cursor-char:'▍';");
     vars.push_str("--cursor-blink:0.9s;");
-    vars.push_str("--cursor-color:var(--accent-cyan);");
+    vars.push_str("--cursor-color:#ffffff;");
     vars.push_str("--glitch-intensity:6px;");
     vars.push_str("--glitch-ms:6500ms;");
     vars.push_str("--glitch-duration:500ms;");
@@ -39,9 +39,10 @@ pub fn default_css_vars() -> String {
     vars.push_str("--glitch-jitter:1.2px;");
     vars.push_str("--scanline-opacity:0.30;");
     vars.push_str("--scanline-color:#000;");
-    vars.push_str("--scanline-size:5px;");
-    vars.push_str("--scanline-gap:5px;");
+    vars.push_str("--scanline-size:calc(100vh / 216);");
+    vars.push_str("--scanline-gap:calc(100vh / 216);");
     vars.push_str("--scanline-speed:90s;");
+    vars.push_str("--scanline-steps:90;");
     vars.push_str("--crt-perspective:600px;");
     vars.push_str("--crt-radius:40px;");
     vars.push_str("--crt-vignette-stops:transparent 0%, transparent 70%, var(--vignette-edge) 100%;");
@@ -149,7 +150,7 @@ body::after {{
   pointer-events: none;
   z-index: 7;
   will-change: transform;
-  animation: scanline-sweep var(--scanline-speed) linear infinite;
+  animation: scanline-sweep var(--scanline-speed) steps(var(--scanline-steps)) infinite;
 }}
 
 @keyframes scanline-sweep {{

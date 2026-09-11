@@ -30,7 +30,7 @@
   --typewriter-opacity-end:1;
   --cursor-char:'▍';
   --cursor-blink:0.9s;
-  --cursor-color:var(--accent-cyan);
+  --cursor-color:#ffffff;
   --glitch-intensity:6px;
   --glitch-ms:6500ms;
   --glitch-duration:500ms;
@@ -39,9 +39,10 @@
   --glitch-jitter:1.2px;
   --scanline-opacity:0.30;
   --scanline-color:#000;
-  --scanline-size:5px;
-  --scanline-gap:5px;
+  --scanline-size:calc(100vh / 216);
+  --scanline-gap:calc(100vh / 216);
   --scanline-speed:90s;
+  --scanline-steps:90;
   --crt-perspective:600px;
   --crt-radius:40px;
   --crt-vignette-stops:transparent 0%, transparent 70%, var(--vignette-edge) 100%;
@@ -108,7 +109,7 @@ body::after {
   pointer-events: none;
   z-index: 7;
   will-change: transform;
-  animation: scanline-sweep var(--scanline-speed) linear infinite;
+  animation: scanline-sweep var(--scanline-speed) steps(var(--scanline-steps)) infinite;
 }
 
 @keyframes scanline-sweep {
