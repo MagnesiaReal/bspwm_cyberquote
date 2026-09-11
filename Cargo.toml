@@ -1,0 +1,26 @@
+[package]
+name = "bspwm-cyberquote"
+version = "0.1.0"
+edition = "2021"
+description = "Cyberpunk motivational quote overlay for BSPWM — background WebView with glitch, scanlines, CRT, typewriter animation."
+
+[dependencies]
+gtk = { version = "0.18", optional = true }
+webkit2gtk = { version = "2", features = ["v2_40"], optional = true }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+serde_json = "1"
+rand = "0.8"
+libc = "0.2"
+glib = "0.18"
+
+[dev-dependencies]
+tempfile = "3"
+
+[features]
+default = ["link-gtk"]
+link-gtk = ["gtk", "webkit2gtk"]
+
+[profile.release]
+opt-level = 3
+lto = true
