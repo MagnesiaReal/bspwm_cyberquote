@@ -42,7 +42,7 @@ pub fn default_css_vars() -> String {
     vars.push_str("--scanline-size:calc(100vh / 216);");
     vars.push_str("--scanline-gap:calc(100vh / 216);");
     vars.push_str("--scanline-speed:90s;");
-    vars.push_str("--scanline-steps:90;");
+    vars.push_str("--scanline-steps:2160;");
     vars.push_str("--crt-perspective:600px;");
     vars.push_str("--crt-radius:40px;");
     vars.push_str("--crt-vignette-stops:transparent 0%, transparent 70%, var(--vignette-edge) 100%;");

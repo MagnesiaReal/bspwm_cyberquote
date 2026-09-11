@@ -31,7 +31,7 @@
 //!   │   glitch_duration: 0.52                     # per-glitch seconds     │
 //!   │   glitch_interval: 6.5                      # seconds between glitch │
 //!   │   scanline_opacity: 0.15                    # 0.0-1.0               │
-//!   │   scanline_steps: 90                         # sweep steps (CPU)     │
+//!   │   scanline_steps: 2160                       # ≈24 steps/s (fluid)  │
 //!   │   crt_curvature: 0.12                       # screen bend factor    │
 //!   │                                                                 │
 //!   │ quotes:                                                        │
@@ -214,7 +214,7 @@ impl AccentConfig {
         0.30
     }
     fn default_scanline_steps() -> u32 {
-        90
+        2160
     }
     fn default_crt_curvature() -> f32 {
         0.12
