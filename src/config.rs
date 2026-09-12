@@ -8,9 +8,9 @@
 //! Integration contract with Agent 1 (main.rs):
 //!   - main.rs MUST call `load_config(CONFIG_PATH)` (the const declared there)
 //!     at startup, falling back to defaults on error.
-//!   - main.rs MUST call `build_stylesheet(&config)` for each WebView and inject
-//!     the returned CSS.  See below for the recommended injection method
-//!     (evaluate_javascript on :root).
+//!   - main.rs MUST call `build_stylesheet(&config)` and pass the returned CSS
+//!     to `cyberhtml::build_html()`, which wraps it in `:root { ... }`.  There
+//!     is no separate stylesheet injection step in the GTK4/WebKitGTK 6.0 host.
 //!   - main.rs MUST map each Gdk `Monitor`'s geometry into a `ConfigMonitorInfo`
 //!     (defined here) before calling `monitor_layout()`.
 //!
@@ -48,10 +48,11 @@
 //!   └─────────────────────────────────────────────────────────────────┘
 //!
 //! Stylesheet injection note:
-//!   The original webkit2gtk host injected `build_stylesheet()`'s custom
-//!   properties into the WebView by wrapping them in a <style> tag.  This is
-//!   now handled in main.rs via the webkit2gtk user-content / user-stylesheet
-//!   path; the returned string is a semicolon-separated list of CSS
+//!   The GTK4 + WebKitGTK 6.0 host (main.rs) injects `build_stylesheet()`'s
+//!   custom properties by passing the returned string to
+//!   `cyberhtml::build_html()`, which wraps it in a `:root { ... }` block
+//!   inside the generated document — no user-scripts / user-stylesheets are
+//!   used.  The returned string is a semicolon-separated list of CSS
 //!   custom-property declarations (e.g. `--accent-cyan:#39e6ff;--bg:#05070d;`).
 
 use serde::Deserialize;

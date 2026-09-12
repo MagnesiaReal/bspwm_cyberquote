@@ -3,11 +3,39 @@
 Cyberpunk CRT "quote ticker" running as an always-on desktop app under bspwm.
 Two sibling projects share most code:
 
-- `/home/magneciareal/bspwm-cyberquote`       — original host (GTK3 + webkit2gtk-4.1 WebView)
+- `/home/magneciareal/bspwm-cyberquote`       — original host (GTK4 + WebKitGTK 6.0, `webkit6` crate)
 - `/home/magneciareal/bspwm-cyberquote-native` — native fork (GTK3 + Cairo/Pango, no WebView).
 
 The native fork was created to drop CPU/memory by replacing the WebView with
 direct Cairo rendering. It is NOT a git repo; the original is (see Git below).
+
+## GTK4 host facts (original repo, `webkit6` crate)
+
+The original repo migrated from GTK3 + webkit2gtk-4.1 to GTK4 + WebKitGTK 6.0
+(crates: `gtk` = `gtk4` 0.11, `webkit6` 0.6, `gdk4-x11` 0.11 `xlib` feature,
+`glib` 0.22, gated behind feature `link-gtk`). Things learned the hard way:
+
+- GTK4 removed `gtk_window_move`, `gtk_window_set_position`, `set_type_hint`,
+  `GdkWindowTypeHint::Desktop`, `skip_taskbar_hint`/`skip_pager_hint`, and
+  `gdk_monitor_is_primary`. The desktop "wallpaper" behavior is restored in
+  `main.rs::apply_desktop_placement` via raw Xlib: the window's XID is marked
+  `_NET_WM_WINDOW_TYPE_DESKTOP` (EWMH) and `XMoveResizeWindow`'d onto its
+  monitor — the same mechanism conky/glava use. On Wayland the fallback is
+  `fullscreen_on_monitor`. Xlib symbols come from `gdk4_x11::x11::xlib`.
+- GDK4 monitor list is a `GListModel`: `display.monitors()` then
+  `.iter::<Monitor>()`. No per-index getter, no `n_monitors`. Primary
+  detection = geometry-origin heuristic (monitor containing (0,0)).
+- Widget embedding: `window.set_child(Some(&webview))`, loading via
+  `webview.load_html(html, Some("file:///cyberquote.html"))`. Desktop placement
+  must run at **realize** time (the X11 surface exists then, and the WM reads
+  `_NET_WM_WINDOW_TYPE` at the map request) — `connect_map` alone is too late.
+  The shim is wired to BOTH `connect_realize` and `connect_map` (re-assert).
+- `glib` is re-exported by gtk4 as `gtk::glib`; main.rs uses
+  `use gtk::glib as glib;`. `timeout_add` + `ControlFlow` for the shutdown
+  poll; SIGTERM/SIGINT handled by raw POSIX handlers writing an AtomicBool.
+- GTK4 re-exports gdk as `gtk::gdk`; `display.backend() == Backend::X11` is
+  the X11/Wayland switch. `set_skip_taskbar_hint`/`set_skip_pager_hint` still
+  exist (deprecated) on `gdk4_x11::X11Surface`.
 
 ## Commands
 
