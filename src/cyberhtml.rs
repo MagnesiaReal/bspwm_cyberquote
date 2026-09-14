@@ -37,7 +37,7 @@ pub fn default_css_vars() -> String {
     vars.push_str("--glitch-color-cyan:137px 0 0 var(--accent-cyan);");
     vars.push_str("--glitch-color-magenta:-137px 0 0 var(--accent-magenta);");
     vars.push_str("--glitch-jitter:1.2px;");
-    vars.push_str("--scanline-opacity:0.30;");
+    vars.push_str("--scanline-opacity:0.20;");
     vars.push_str("--scanline-color:#000;");
     vars.push_str("--scanline-size:0.1rem;");
     vars.push_str("--scanline-gap:calc((100vh / 216) - 0.1rem);");
@@ -426,7 +426,7 @@ text-shadow:
     }}
 
     function scheduleGlitch() {{
-      setTimeout(triggerGlitch, randomBetween(3000, 25000));
+      setTimeout(triggerGlitch, randomBetween(2000, 12000));
     }}
 
     function triggerGlitch() {{

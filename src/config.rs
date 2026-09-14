@@ -27,6 +27,8 @@
 //!   │ accent:                                                         │
 //!   │   cyan: "#00ffff"                           # CSS hex color         │
 //!   │   magenta: "#ff00ff"                        # CSS hex color         │
+//!   │   author_color: "#ffa028e6"                 # author ink               │
+//!   │   cursor_color: "#ffa028e6"                 # terminal caret (fork)     │
 //!   │   glitch_intensity: 0.35                    # 0.0-1.0               │
 //!   │   glitch_duration: 0.52                     # per-glitch seconds     │
 //!   │   glitch_interval: 6.5                      # seconds between glitch │
@@ -155,6 +157,10 @@ pub struct AccentConfig {
     pub magenta: String,
     #[serde(default = "AccentConfig::default_orange")]
     pub orange: String,
+    #[serde(default = "AccentConfig::default_author_color")]
+    pub author_color: String,
+    #[serde(default = "AccentConfig::default_cursor_color")]
+    pub cursor_color: String,
     #[serde(default = "AccentConfig::default_glitch_intensity")]
     pub glitch_intensity: f32,
     #[serde(default = "AccentConfig::default_glitch_duration")]
@@ -179,6 +185,8 @@ impl AccentConfig {
             cyan: Self::default_cyan(),
             magenta: Self::default_magenta(),
             orange: Self::default_orange(),
+            author_color: Self::default_author_color(),
+            cursor_color: Self::default_cursor_color(),
             glitch_intensity: Self::default_glitch_intensity(),
             glitch_duration: Self::default_glitch_duration(),
             glitch_interval: Self::default_glitch_interval(),
@@ -198,6 +206,12 @@ impl AccentConfig {
     fn default_orange() -> String {
         "#ffe3b3".into()
     }
+    fn default_author_color() -> String {
+        "#ffa028e6".into()
+    }
+    fn default_cursor_color() -> String {
+        "#ffa028e6".into()
+    }
     fn default_glitch_intensity() -> f32 {
         0.35
     }
@@ -208,7 +222,7 @@ impl AccentConfig {
         6.5
     }
     fn default_scanline_opacity() -> f32 {
-        0.30
+        0.20
     }
     fn default_scanline_steps() -> u32 {
         2160
@@ -636,6 +650,8 @@ foreground_color = "#ff5cf0"
 cyan = "#00ffcc"
 magenta = "#ff0088"
 orange = "#ffb347"
+author_color = "#ffa028e6"
+cursor_color = "#ffa028e6"
 glitch_intensity = 0.45
 glitch_duration = 0.30
 glitch_interval = 4.0
@@ -671,6 +687,8 @@ primary_only = true
         assert_eq!(c.accent.cyan, "#00ffcc");
         assert_eq!(c.accent.magenta, "#ff0088");
         assert_eq!(c.accent.orange, "#ffb347");
+        assert_eq!(c.accent.author_color, "#ffa028e6");
+        assert_eq!(c.accent.cursor_color, "#ffa028e6");
         assert!((c.accent.glitch_intensity - 0.45).abs() < 0.01);
         assert!((c.accent.glitch_duration - 0.30).abs() < 0.01);
         assert!((c.accent.glitch_interval - 4.0).abs() < 0.01);
@@ -699,6 +717,8 @@ primary_only = true
         assert_eq!(c.display.foreground_color, DisplayConfig::default_foreground_color());
         assert_eq!(c.accent.cyan, AccentConfig::default_cyan());
         assert_eq!(c.accent.magenta, AccentConfig::default_magenta());
+        assert_eq!(c.accent.author_color, AccentConfig::default_author_color());
+        assert_eq!(c.accent.cursor_color, AccentConfig::default_cursor_color());
         assert!((c.accent.glitch_intensity - AccentConfig::default_glitch_intensity()).abs() < 0.01);
         assert!((c.accent.glitch_duration - AccentConfig::default_glitch_duration()).abs() < 0.01);
         assert!((c.accent.glitch_interval - AccentConfig::default_glitch_interval()).abs() < 0.01);

@@ -37,7 +37,7 @@
   --glitch-color-cyan:137px 0 0 var(--accent-cyan);
   --glitch-color-magenta:-137px 0 0 var(--accent-magenta);
   --glitch-jitter:1.2px;
-  --scanline-opacity:0.30;
+  --scanline-opacity:0.20;
   --scanline-color:#000;
   --scanline-size:0.1rem;
   --scanline-gap:calc((100vh / 216) - 0.1rem);
@@ -406,7 +406,7 @@ text-shadow:
   }
 
   function scheduleGlitch() {
-    setTimeout(triggerGlitch, randomBetween(3000, 25000));
+    setTimeout(triggerGlitch, randomBetween(2000, 12000));
   }
 
   function triggerGlitch() {

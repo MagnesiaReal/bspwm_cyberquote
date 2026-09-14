@@ -111,8 +111,8 @@ The scanline overlay is a single `repeating-linear-gradient` on a
 - Reuses `src/config.rs`, `src/quotes.rs`, and `config.toml` copied verbatim;
   `quotes.json` is a symlink back to the original repo, so both apps share the
   quote pool and the same `CONFIG_PATH`.
-- `src/render.rs` is the Cairo paint pipeline (glow via duplicated
-  mask_surface layers, scanlines, vignette, RGB-split glitch, cursor).
+- `src/render.rs` is the Cairo paint pipeline (scanlines, vignette, RGB-split
+  glitch, cursor).
 - gtk 0.18 API facts learned the hard way:
   - `connect_draw` returns `glib::Propagation::Proceed`, not `glib::Inhibit`.
   - `pangocairo` is NOT re-exported by `gtk`; depends on it directly.
@@ -121,11 +121,37 @@ The scanline overlay is a single `repeating-linear-gradient` on a
   - `add_color_stop_rgba` takes 5 args.
   - many `cr.paint()/save()/restore()` return `Result`; render.rs has
     `#![allow(unused_must_use)]` at the top.
-- Redraws are event-driven only (nothing animates continuously), so idle CPU is
-  near zero. Measuring it: `scripts/cpu_measure.sh` (see below).
+- The quote/text layer is event-driven only (drawn on quote change, typewriter
+  reveal, glitch burst, or resize). Each phrase opens with a ONE-SHOT typewriter
+  reveal: `main.rs::start_typewriter` advances `typewriter_chars` (~30 ms/char,
+  generation-token so a later phrase retires a stale timer), and
+  `render::draw_text_block` clips the centered/wrapped quote line-by-line to the
+  caret of the revealed chars (`push_typewriter_clip` + `pango::Layout::
+  index_to_line_x`), drawing the caret (`draw_terminal_cursor`) inside the
+  revealed region. The author line appears only once the phrase is fully
+  revealed. The quote body is a single crisp `render::draw_text` pass in the
+  foreground color. The single continuous animation is the migrating scanlines:
+  a transparent RGBA
+  `gtk::Overlay` layer paints a PRE-RENDERED A8
+  tile (`render::scanline_tile` — exactly one `period` tall, holding one band)
+  via `render::draw_scanline_tile` as a single `Extend::Repeat` pattern paint
+  (one composited blit per frame — no clear, no per-band rects). The timer
+  rolls the phase 20 fps/90s, wrapping on the SAME integer period the tile is
+  built with (`render::scanline_tile_height`) so no seam can accumulate. When
+  that overlay exists it also paints the blinking terminal caret
+  (`render::cursor_rect` gated by `DrawState.cursor_on`; toggled by
+  `arm_cursor_blink` at ~1.9 Hz) — the heavy main layer is only redrawn on
+  quote change, glitch burst, typewriter progress, or resize.  Needs a
+  compositor (`screen.rgba_visual()`); without one the main layer draws
+  static scanlines AND the caret itself (`Theme.animated_scanlines`). Tunables
+  `scanline_opacity`/`scanline_lines`/`scanline_size_rem` are read from
+  `config.toml` but the fork derives band thickness/spacing in Cairo, not CSS.
+  Measuring it: `scripts/cpu_measure.sh` (see below).
 - If you edit the original `src/config.rs`, mirror it into the fork
-  (`cp ../bspwm-cyberquote/src/config.rs src/config.rs`) to keep the shared
-  module identical, then `cargo build` the fork.
+  (`cp ../bspwm-cyberquote/src/config.rs src/config.rs`) — kept md5-identical.
+  The fork-only `accent.author_color` drives author ink (HTML host ignores it,
+  keeping its cyan author via CSS); `accent.cursor_color` drives the terminal
+  caret + blink overlay, defaulting to the same violet as the author.
 
 ## CPU measurement
 
@@ -143,7 +169,7 @@ Original (`~/bspwm-cyberquote`): 17 lib tests pass. Integration suite: 21 pass,
 `test_e2e_html_parseable_as_whole_document`, `test_html_has_required_structure`,
 `test_html_uses_css_var_for_each_tunable`, `test_typewriter_slide_from_below`,
 plus 1 flaky random: `test_e2e_two_independent_loads_produce_different_html`.
-Fork: 13 lib tests pass, no integration tests.
+Fork: 21 lib tests pass, no integration tests.
 
 Gotcha: `src/config.rs`'s module doc used to embed a broken code doctest
 (referencing `webkit_web_view_run_javascript`). It's fixed — keep the header
